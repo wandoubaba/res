@@ -1,0 +1,20 @@
+{
+    "name": "wandoubaba/res",
+    "description": "一个简单的Res模型，包含code、msg、data属性，可用于HTTP接口的返回值",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Wandoubaba\\Res\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "wandoubaba",
+            "email": "wandoubaba517@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.4"
+    }
+}
