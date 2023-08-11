@@ -1,5 +1,5 @@
 <?php
-namespace Wandoubaba\Res;
+namespace Wandoubaba;
 
 use ReflectionObject;
 use ReflectionProperty;
