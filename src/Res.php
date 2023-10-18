@@ -11,7 +11,7 @@ class Res implements \JsonSerializable
      *
      * @author Aaron <chenqiang@h024.cn>
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         $res = new \stdClass();
         $reflect = new ReflectionObject($this);
