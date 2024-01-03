@@ -1,8 +1,10 @@
 <?php
 namespace Wandoubaba;
 
+use Exception;
 use ReflectionObject;
 use ReflectionProperty;
+use DI\Attribute\Inject;
 
 class Res implements \JsonSerializable
 {
@@ -57,6 +59,9 @@ class Res implements \JsonSerializable
         self::LOGIN_FAILED => '登录失败',
         self::NO_CHANGE => '无数据变化',
     );
+
+    #[Inject('code_messages')]
+    private $custom_code_message;
 
     protected $code = null;
     protected $msg = null;
@@ -277,7 +282,7 @@ class Res implements \JsonSerializable
     {
         try {
             $data = json_decode(json_encode($data), true);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // 什么也不用做
         }
         if (is_array($data)) {
@@ -303,6 +308,9 @@ class Res implements \JsonSerializable
     protected function returnCodeMessage($code)
     {
         $message = '其他错误';
+        if (is_array($this->custom_code_message)) {
+            $this->code_message = $this->custom_code_message + $this->code_message;
+        }
         if (isset($this->code_message[$code])) {
             $message = $this->code_message[$code];
         }

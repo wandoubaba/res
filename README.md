@@ -4,6 +4,20 @@
 
 ## 使用方法
 
+新版本可以接收名为`code_messages`的依赖注入，注入的内容是键值数组，因此可以支持自定义错误码，例如:
+
+```php
+[
+    309 => 'token error',
+    502 => 'gateway error'
+];
+```
+
+依赖注入参考:
+
+<https://php-di.org/doc/getting-started.html>
+<https://www.workerman.net/doc/webman/di.html>
+
 安装
 
 ```sh
