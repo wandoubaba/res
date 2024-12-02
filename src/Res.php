@@ -1,4 +1,5 @@
 <?php
+
 namespace Wandoubaba;
 
 use Exception;
@@ -79,7 +80,7 @@ class Res implements \JsonSerializable
      */
     public function success($msg = '', $data = null)
     {
-        $this->setCode(ResCode::SUCCESS);
+        $this->setCode(DefaultResCode::SUCCESS);
         if ($msg) {
             $this->setMsg($msg);
         }
@@ -102,7 +103,7 @@ class Res implements \JsonSerializable
      */
     public function failed($msg = '', $data = null)
     {
-        $this->setCode(ResCode::FAILED);
+        $this->setCode(DefaultResCode::FAILED);
         if ($msg) {
             $this->setMsg($msg);
         }
@@ -122,7 +123,7 @@ class Res implements \JsonSerializable
      */
     public function isSuccessful()
     {
-        if ($this->code == ResCode::SUCCESS) {
+        if ($this->code == DefaultResCode::SUCCESS) {
             return true;
         }
         return false;
@@ -348,15 +349,19 @@ class Res implements \JsonSerializable
     protected function returnCodeMessage($code)
     {
         $message = '';
+
         $codeMessages = $this->customCodeMessages;
+
         if (is_array($codeMessages)) {
-            $codeMessages += ResCode::CODE_MESSAGES;
+            $codeMessages = array_replace(DefaultResCode::CODE_MESSAGES, $codeMessages);
         } else {
-            $codeMessages = ResCode::CODE_MESSAGES;
+            $codeMessages = DefaultResCode::CODE_MESSAGES;
         }
+
         if (isset($codeMessages[$code])) {
             $message = $codeMessages[$code];
         }
+
         return $message;
     }
 }

@@ -6,7 +6,7 @@ namespace Wandoubaba;
  *
  * @author Aaron Chen <qiang.c@wukezhenzhu.com>
  */
-class ResCode
+class DefaultResCode
 {
     const ERROR = 0;                // System Exception
     const SUCCESS = 200;            // success
