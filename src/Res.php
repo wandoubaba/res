@@ -4,12 +4,14 @@ namespace Wandoubaba;
 use Exception;
 use ReflectionObject;
 use ReflectionProperty;
+
 use DI\Attribute\Inject;
 
 class Res implements \JsonSerializable
 {
     /**
-     * 重写jsonSerialize接口，实现对属性序列化
+     * Rewrite the jsonSerialize interface to implement json
+     * serialization of code, msg, and data attributes
      *
      * @author Aaron <chenqiang@h024.cn>
      */
@@ -27,41 +29,14 @@ class Res implements \JsonSerializable
         return get_object_vars($res);
     }
 
-    /** returncode的返回代码 */
-    const ERROR = 0;                // 系统错误
-    const SUCCESS = 200;            // 正确
-    const FAILED = -1;              // 通用一般错误
-    const NOT_LOGED = 306;          // 自定义306表示未登录
-    const HEARTBEAT = 1;            // 自定义1表示心跳消息，可忽略
-    const NOT_FOUND = 404;          // 404错误
-    const INTERNAL_ERROR = 500;     // 500错误
-    const NOT_ALLOWED = 308;        // 自定义308表示没有权限
-    const NO_DATA = 407;            // 自定义407表示数据不存在
-    const LOGIN_FAILED = 301;       // 自定义301表示登录失败
-    const NO_CHANGE = 408;          // 自定义408表示无数据变化
-
     /**
-     * 这里不能用protected，否则序列化时会被显示出来
+     * Receive the code and msg associative array flowing in in "DI" mode
      *
-     * @var array
+     * @var [type]
      * @author Aaron Chen <qiang.c@wukezhenzhu.com>
      */
-    private $code_message = array(
-        self::ERROR => '内部错误',
-        self::SUCCESS => '操作成功',
-        self::FAILED => '操作失败',
-        self::NOT_LOGED => '用户未登录',
-        self::HEARTBEAT => '心跳',
-        self::NOT_ALLOWED => '没有权限',
-        self::NOT_FOUND => '请求路径不正确',
-        self::INTERNAL_ERROR => '系统错误',
-        self::NO_DATA => '数据不存在',
-        self::LOGIN_FAILED => '登录失败',
-        self::NO_CHANGE => '无数据变化',
-    );
-
     #[Inject('code_messages')]
-    private $custom_code_message;
+    private $customCodeMessages;
 
     protected $code = null;
     protected $msg = null;
@@ -92,32 +67,74 @@ class Res implements \JsonSerializable
         return $this->$property;
     }
 
-    public function success($data = null, $msg = '操作成功')
+    /**
+     * Quick return success, by default only affects code and msg, does not operate data
+     *
+     * @author Aaron Chen <qiang.c@wukezhenzhu.com>
+     *
+     * @param  string $msg
+     * @param  [type] $data
+     *
+     * @return void
+     */
+    public function success($msg = '', $data = null)
     {
-        $this->msg = $msg;
-        $this->code = self::SUCCESS;
-        $this->data = is_null($data) ? $this->data : $data;
+        $this->setCode(ResCode::SUCCESS);
+        if ($msg) {
+            $this->setMsg($msg);
+        }
+        if (!is_null($data)) {
+            $this->setData($data);
+        }
         $this->end();
         return $this;
     }
 
-    public function failed($msg = '操作失败', $code = self::FAILED, $data = null)
+    /**
+     * Quick return fails. By default, only code and msg are affected, and data is not operated.
+     *
+     * @author Aaron Chen <qiang.c@wukezhenzhu.com>
+     *
+     * @param  string $msg
+     * @param  [type] $data
+     *
+     * @return void
+     */
+    public function failed($msg = '', $data = null)
     {
-        $this->msg = $msg;
-        $this->code = $code;
-        $this->data = is_null($data) ? $this->data : $data;
+        $this->setCode(ResCode::FAILED);
+        if ($msg) {
+            $this->setMsg($msg);
+        }
+        if (!is_null($data)) {
+            $this->setData($data);
+        }
         $this->end();
         return $this;
     }
 
+    /**
+     * Determine whether the code of the returned object is "SUCCESS" code
+     *
+     * @author Aaron Chen <qiang.c@wukezhenzhu.com>
+     *
+     * @return boolean
+     */
     public function isSuccessful()
     {
-        if ($this->code == self::SUCCESS) {
+        if ($this->code == ResCode::SUCCESS) {
             return true;
         }
         return false;
     }
 
+    /**
+     * Clear the code, msg and data attributes
+     *
+     * @author Aaron Chen <qiang.c@wukezhenzhu.com>
+     *
+     * @return void
+     */
     public function clear()
     {
         $this->code = null;
@@ -127,7 +144,7 @@ class Res implements \JsonSerializable
     }
 
     /**
-     * 设置data属性
+     * Set the data attribute
      *
      * @author Aaron <chenqiang@h024.cn>
      *
@@ -144,14 +161,37 @@ class Res implements \JsonSerializable
         return $this;
     }
 
+    /**
+     * Set the code value. When there is a corresponding message
+     * in the CODE_MESSAGES array, the msg value will be reset at
+     * the same time.
+     *
+     * @author Aaron Chen <qiang.c@wukezhenzhu.com>
+     *
+     * @param  [type] $code
+     *
+     * @return void
+     */
     public function setCode($code)
     {
         $this->code = $code;
-        $this->msg = $this->returnCodeMessage($this->code);
+        $message = $this->returnCodeMessage($code);
+        if ($message) {
+            $this->msg = $message;
+        }
         $this->end();
         return $this;
     }
 
+    /**
+     * Set the msg attribute
+     *
+     * @author Aaron Chen <qiang.c@wukezhenzhu.com>
+     *
+     * @param  [type] $message
+     *
+     * @return void
+     */
     public function setMsg($message)
     {
         $this->msg = $message;
@@ -307,12 +347,15 @@ class Res implements \JsonSerializable
      */
     protected function returnCodeMessage($code)
     {
-        $message = '其他错误';
-        if (is_array($this->custom_code_message)) {
-            $this->code_message = $this->custom_code_message + $this->code_message;
+        $message = '';
+        $codeMessages = $this->customCodeMessages;
+        if (is_array($codeMessages)) {
+            $codeMessages += ResCode::CODE_MESSAGES;
+        } else {
+            $codeMessages = ResCode::CODE_MESSAGES;
         }
-        if (isset($this->code_message[$code])) {
-            $message = $this->code_message[$code];
+        if (isset($codeMessages[$code])) {
+            $message = $codeMessages[$code];
         }
         return $message;
     }
