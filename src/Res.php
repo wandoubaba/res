@@ -31,12 +31,8 @@ class Res implements \JsonSerializable
     }
 
     /**
-     * Receive the code and msg associative array flowing in in "DI" mode
-     *
-     * @var [type]
-     * @author Aaron Chen <qiang.c@wukezhenzhu.com>
+     * @Inject("code_messages")
      */
-    #[Inject('code_messages')]
     private $customCodeMessages;
 
     protected $code = null;
